@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PlateVision — Number Plate Recognition</title>
+  <link rel="stylesheet" href="/static/style.css?v=5" />
+</head>
+<body>
+  <div class="background-grid" aria-hidden="true"></div>
+  <header class="nav shell">
+    <div class="brand"><span class="brand-mark">▣</span><span>PLATE<span class="accent">VISION</span></span></div>
+    <span class="nav-chip">IMAGE PROCESSING · NO ML</span>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow"><span class="eyebrow-line"></span> NUMBER PLATE RECOGNITION</p>
+      <h1>Detect. <em>Read.</em> Recognize.</h1>
+      <p>Upload a car photograph to locate its registration plate and identify the characters using classical image processing.</p>
+    </section>
+
+    <section class="workspace" aria-labelledby="studio-title">
+      <div class="section-header">
+        <div><span class="kicker">IMAGE ANALYSIS</span><h2 id="studio-title">Analyze your vehicle</h2></div>
+        <span class="note">JPG · JPEG · PNG</span>
+      </div>
+      <div class="studio-grid">
+        <div class="panel upload-panel">
+          <div class="panel-title"><span class="panel-dot"></span> UPLOAD IMAGE</div>
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Select an image">
+            <span class="drop-icon">⇧</span>
+            <strong>Drag and drop a car image</strong>
+            <span>or choose a file from your computer</span>
+            <input type="file" id="image-upload" accept=".jpg,.jpeg,.png,image/jpeg,image/png" hidden />
+            <span class="file-help">JPG / JPEG / PNG · UP TO 24 MB</span>
+          </div>
+          <label class="btn btn-primary choose-image-btn" for="image-upload">＋ Choose image</label>
+          <p id="upload-feedback" class="upload-feedback" role="status" aria-live="polite">Select an image to get started.</p>
+        </div>
+
+        <div class="panel result-panel">
+          <div class="panel-title"><span class="panel-dot green"></span> DETECTION RESULT <span id="analysis-status" class="status">READY</span></div>
+          <div class="result-placeholder" id="result-placeholder"><div class="scan-icon">▤</div><strong>Your result will appear here</strong><span>Choose an image to begin analysis.</span></div>
+          <div class="result-loaded" id="result-loaded" hidden>
+            <img id="result-image" alt="Car image with highlighted number-plate region" />
+            <div class="result-section-title">PLATE READING</div>
+            <div id="predictions" class="prediction-list" aria-live="polite"></div>
+            <p id="result-source" class="result-source" hidden></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-bottom" aria-labelledby="settings-title">
+      <details id="analysis-options">
+        <summary id="settings-title">Image analysis mode <span class="settings-caret">⌄</span></summary>
+        <div class="settings-content">
+          <label for="sample-mode">Recognition mode</label>
+          <select id="sample-mode" class="mode-select">
+            <option value="classical" selected>Automatic image processing</option>
+            <option value="reference">Annotation comparison</option>
+          </select>
+          <p id="mode-notice">Automatic mode analyzes image pixels using OpenCV. Recognition accuracy varies with image quality.</p>
+          <p class="setting-note">Annotation comparison displays a label supplied with a matching reference image. It is not character recognition from the image.</p>
+        </div>
+      </details>
+    </section>
+    <footer><span>PLATEVISION</span><span>Python · OpenCV · Classical image processing</span></footer>
+  </main>
+  <script src="/static/app.js?v=5"></script>
+</body>
+</html>
