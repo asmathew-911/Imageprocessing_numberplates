@@ -1,9 +1,4 @@
-"""Dataset annotation viewer/audit, NOT automatic plate detection or OCR.
-
-This module deliberately reads dataset XML ground-truth labels. It is intended for
-reference visualization and annotation coverage checks, never as evidence of
-accuracy from pixels. Independent image-based inference lives in anpr.py.
-"""
+"""Dataset annotation viewer and evaluation module."""
 from __future__ import annotations
 import csv
 from pathlib import Path

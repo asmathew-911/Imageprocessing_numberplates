@@ -1,4 +1,4 @@
-"""Run independent non-ML ANPR on all allowed images; evaluate XML separately."""
+"""Batch evaluation utility for dataset collections."""
 from __future__ import annotations
 import argparse,csv,re,xml.etree.ElementTree as ET
 from pathlib import Path

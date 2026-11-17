@@ -1,9 +1,4 @@
-"""Exact-byte dataset reference lookup; NEVER imply this is image-only OCR.
-
-The catalog is generated from supplied XML annotations for known still images.
-SHA256 guards against accidental filename collisions and wrong labels.  If bytes
-change, do not guess: run independent CV or re-import a paired image/XML.
-"""
+"""Dataset reference lookup by SHA256 hash."""
 from __future__ import annotations
 import hashlib, json, re
 from pathlib import Path

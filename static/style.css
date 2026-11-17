@@ -539,50 +539,91 @@ h2 {
   font-weight: 600;
 }
 
-/* Settings Drawer */
-.settings-drawer {
-  margin-top: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--panel-card);
+/* ---- BOTTOM SETTINGS SECTION ---------------------------- */
+.settings-bottom-section {
+  margin: 10px 0 50px;
 }
-.settings-drawer summary {
-  padding: 10px 14px;
-  font-size: 12px;
+.settings-bottom-drawer {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.settings-bottom-drawer:hover {
+  border-color: var(--line-strong);
+}
+.settings-bottom-drawer summary {
+  padding: 16px 22px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--navy-dark);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   list-style: none;
+  user-select: none;
 }
-.settings-drawer summary::-webkit-details-marker { display: none; }
-.drawer-caret {
-  margin-left: auto;
-  font-size: 16px;
+.settings-bottom-drawer summary::-webkit-details-marker { display: none; }
+.settings-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-summary-left svg {
   color: var(--navy-light);
 }
-.drawer-content {
-  padding: 12px 14px 14px;
-  border-top: 1px solid var(--line);
+.drawer-caret {
+  font-size: 18px;
+  color: var(--navy-light);
+  transition: transform 0.2s ease;
 }
-.form-select {
+.settings-bottom-drawer[open] .drawer-caret {
+  transform: rotate(180deg);
+}
+.settings-bottom-content {
+  padding: 18px 22px 22px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-card);
+}
+.mode-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 480px;
+}
+.mode-field-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--navy-dark);
+  text-transform: uppercase;
+}
+.form-select.mode-select-bottom {
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
+  max-width: 480px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-sm);
   background: var(--panel);
   color: var(--text);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
 }
-.drawer-content p {
-  font-size: 11px;
+.form-select.mode-select-bottom:focus {
+  outline: none;
+  border-color: var(--navy);
+}
+.mode-notice-text {
+  font-size: 12px;
   color: var(--text-muted);
-  margin: 8px 0 0;
-  line-height: 1.5;
+  margin: 10px 0 0;
+  line-height: 1.6;
 }
 
 /* ---- RESULT CARD ---------------------------------------- */

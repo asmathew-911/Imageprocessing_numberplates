@@ -119,22 +119,6 @@
           <p id="upload-feedback" class="upload-feedback" role="status" aria-live="polite">
             Select an image to run the classical image processing pipeline.
           </p>
-
-          <details class="settings-drawer" id="analysis-options">
-            <summary>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-              <span>Recognition Mode</span>
-              <span class="drawer-caret">⌄</span>
-            </summary>
-            <div class="drawer-content">
-              <label for="sample-mode" class="sr-only">Mode</label>
-              <select id="sample-mode" class="form-select">
-                <option value="classical" selected>Automatic Image Processing (OpenCV)</option>
-                <option value="reference">Annotation Comparison (Dataset XML)</option>
-              </select>
-              <p id="mode-notice">Analyzes pixels directly using OpenCV computer vision algorithms.</p>
-            </div>
-          </details>
         </div>
 
         <!-- Detection Result Card -->
@@ -262,6 +246,29 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- BOTTOM SETTINGS: RECOGNITION MODE -->
+    <section class="settings-bottom-section" aria-labelledby="settings-title">
+      <details class="settings-bottom-drawer" id="analysis-options">
+        <summary id="settings-title">
+          <div class="settings-summary-left">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>Recognition Mode</span>
+          </div>
+          <span class="drawer-caret">⌄</span>
+        </summary>
+        <div class="settings-bottom-content">
+          <div class="mode-control-row">
+            <label for="sample-mode" class="mode-field-label">Mode</label>
+            <select id="sample-mode" class="form-select mode-select-bottom">
+              <option value="classical" selected>Automatic Image Processing (OpenCV)</option>
+              <option value="reference">Annotation Comparison (Dataset XML)</option>
+            </select>
+          </div>
+          <p id="mode-notice" class="mode-notice-text">Analyzes pixels directly using OpenCV computer vision algorithms.</p>
+        </div>
+      </details>
     </section>
   </main>
 

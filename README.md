@@ -1,45 +1,96 @@
-# PlateVision v5 — clean image-processing website
+# PlateVision — Number Plate Recognition System
 
-A dark, clean website for number plate detection and character reading using Python, FastAPI, OpenCV, and deterministic multi-font template matching. No ML models are used in `anpr.py`.
+PlateVision is a computer vision web application for vehicle number plate localization and character recognition built using Python, OpenCV, and FastAPI. It features an interactive UI styled after the Canva Blue & Beige aesthetic, complete with a 9-stage visual image processing pipeline.
 
-## Run on Windows
+---
 
-Extract this ZIP so `app.py` and `requirements.txt` are directly in your project folder. In VS Code terminal, run:
+## Quick Start & Localhost Link
 
-```powershell
-python -m pip install -r requirements.txt
-python app.py
+1. **Install dependencies:**
+   ```powershell
+   python -m pip install -r requirements.txt
+   ```
+
+2. **Start the application:**
+   ```powershell
+   python app.py
+   ```
+
+3. **Open in your browser:**
+   ```
+   http://127.0.0.1:8000
+   ```
+   *(Link: [http://127.0.0.1:8000](http://127.0.0.1:8000))*
+
+---
+
+## Project Directory Structure
+
+```
+Imageprocessing_numberplates/
+├── anpr.py                         # 🧠 Core computer vision & character OCR algorithms
+├── app.py                          # 🌐 FastAPI web server & 9-stage visual pipeline generator
+├── batch.py                        # 📊 Batch evaluation runner across dataset directories
+├── dataset_catalog.py              # 🔍 SHA256 image lookup helper for ground-truth references
+├── dataset_reference_catalog.json  # 📑 Pre-compiled reference annotations catalog
+├── prepare_dataset.py              # 📦 Dataset ZIP extractor and image file scanner
+├── reference_mode.py               # 📋 Ground-truth XML parser for dataset evaluation
+├── verify_all_442.py               # ✅ Dataset annotation integrity verification script
+├── requirements.txt                # 📦 Python package dependencies (OpenCV, FastAPI, Uvicorn)
+├── README.md                       # 📖 Documentation and usage guide
+│
+├── templates/
+│   └── index.html                  # 🖥️ Webpage structure, dropzone, and 3x3 pipeline grid
+│
+├── static/
+│   ├── style.css                   # 🎨 Canva Blue & Beige color palette and layout styling
+│   └── app.js                      # ⚡ Client-side upload handler, pipeline renderer, & lightbox
+│
+└── data/
+    └── google_images/              # 🚗 Sample vehicle images (.png/.jpg) and annotations (.xml)
 ```
 
-Open http://127.0.0.1:8000 and press Ctrl+Shift+R if an earlier local version is cached.
+---
 
-## Website changes
+## Important Files & Their Role in Image Processing
 
-- Minimal upload and result layout; no sample gallery or dataset/audit marketing blocks.
-- Removed the embedded top banner and the `XML:` text overlay from reference images. The image now only highlights the plate rectangle.
-- Number appears under **Plate reading**.
-- Analysis mode is at the very bottom in an expandable section.
-- Default is **Automatic image processing**, which reads pixels without XML or hash lookup.
-- Optional **Annotation comparison** works only for exact original reference images. Its result remains truthfully marked as an annotation rather than OCR.
-- Supports only JPG, JPEG and PNG in the image uploader.
+### 1. `anpr.py` *(Core Computer Vision Engine)*
+* **Preprocessing & Edge Filtering:** Applies Grayscale conversion, Contrast Limited Adaptive Histogram Equalization (`cv2.createCLAHE`) to boost local contrast, bilateral edge-preserving smoothing (`cv2.bilateralFilter`), and multi-directional Canny edge detection (`cv2.Canny`).
+* **Candidate Region Localization:** Performs multi-scale morphological blackhat/tophat filtering with rectangular structuring elements (`cv2.morphologyEx`) and Sobel vertical gradients, then scores bounding boxes by aspect ratio, contour density, and gradient texture.
+* **Character Segmentation & Recognition:** Segments individual character glyphs via Otsu threshold binarization and connected components analysis (`cv2.connectedComponentsWithStats`), then decodes characters using normalized cross-correlation against multi-font synthetic templates with topological hole-count verification.
 
-## Accuracy / integrity
+### 2. `app.py` *(Web Server & Visual Pipeline Generator)*
+* **API Endpoints:** Hosts the FastAPI web application, serving the web UI at `/` and accepting vehicle image uploads at `/api/upload`.
+* **Visual Pipeline Generator (`_pipeline_steps`):** Automatically captures snapshots of all 9 intermediate image processing transformations, converts them to base64 images, and delivers them to the frontend for real-time visualization.
+* **Dual Execution Modes:** Supports both automatic computer vision inference on uploaded images and ground-truth XML annotation comparison on known dataset samples.
 
-Automatic image processing is not 100% accurate. The separate reference comparison can show an existing supplied text label, but this is not independent recognition. Do not represent that mode's accuracy as OCR performance. The project includes batch benchmarking scripts for objective evaluation.
+### 3. `templates/index.html` *(Frontend UI Structure)*
+* **Interactive Studio Layout:** Provides a vehicle photograph upload dropzone with drag-and-drop capability and a detection result panel displaying the recognized license plate.
+* **9-Stage Pipeline Showcase:** Features a 3×3 visual grid displaying each step of the OpenCV pipeline with click-to-enlarge lightbox modals.
+* **Theme Switching:** Includes an integrated theme selector for toggling between Canva Beige & Navy, Canva Deep Navy, and Dark Cyber aesthetics.
 
-## Project source
+### 4. `static/style.css` & `static/app.js` *(Design & Client-Side Logic)*
+* **Canva Aesthetic (`style.css`):** Implements the exact color scheme from Canva template `EAGumw_v_CU` using `#F4EEE2` (Warm Beige) and `#2F386F` (Deep Indigo Navy) with responsive card grids.
+* **Interactive Behavior (`app.js`):** Asynchronously dispatches image files to the backend via `fetch()`, dynamically renders the 9 pipeline stages with labels, and manages full-resolution lightbox viewing.
 
-- `app.py`: HTTP endpoints and page server
-- `anpr.py`: automatic plate detection and template-based recognition
-- `reference_mode.py`, `dataset_catalog.py`: optional supplied-annotation comparison
-- `templates/index.html`, `static/app.js`, `static/style.css`: streamlined frontend
-- `batch.py`: batch independent evaluation
-- `verify_all_442.py`: separate annotation coverage audit
+### 5. `batch.py` *(Batch Evaluation Runner)*
+* **Dataset Benchmarking:** Scans entire folders of vehicle photos, executing the `anpr.py` pipeline across each file sequentially.
+* **Evaluation Metrics:** Calculates Intersection-over-Union (IoU) overlap against ground-truth bounding boxes and verifies character prediction accuracy, outputting results to CSV.
 
-### Batch testing (independent OpenCV mode)
+---
 
-```powershell
-python batch.py --dataset data/google_images --output results --no-annotated-images
-```
+## The 9-Stage Visual Processing Pipeline
 
-The bundled `data/google_images` folder contains only a few example images. To import your original ZIP for batch evaluation, run `python prepare_dataset.py --zip "C:\path\to\archive (1).zip" --output data`. This extracts only still images and paired annotations; files in `video_images` are excluded.
+When any vehicle image is uploaded, the following 9 intermediate image processing stages are computed and displayed:
+
+| Step | Stage Name | Computer Vision Technique Applied |
+| :---: | :--- | :--- |
+| **01** | **Original** | Raw input vehicle photograph. |
+| **02** | **Grayscale** | Eliminates chrominance to focus purely on luminance intensity (`cv2.cvtColor`). |
+| **03** | **CLAHE** | Contrast-Limited Adaptive Histogram Equalization enhances faint plate edges. |
+| **04** | **Denoised (Bilateral Filter)** | Smooths background textures while keeping glyph edges sharp (`cv2.bilateralFilter`). |
+| **05** | **Edges (Canny)** | Multi-scale gradient analysis isolating plate boundaries (`cv2.Canny`). |
+| **06** | **Threshold (Otsu)** | Calculates the optimal inter-class variance binarization threshold. |
+| **07** | **Morphology (Closed)** | Sobel vertical gradient + rectangular morphological closing to consolidate characters. |
+| **08** | **Detection Result** | Visualizes candidate proposals in Red and the best-scoring plate in Green. |
+| **09** | **Plate Crop** | High-resolution isolated plate region paired with the recognized registration text. |
