@@ -1,73 +1,292 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="canva-beige">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PlateVision — Number Plate Recognition</title>
-  <link rel="stylesheet" href="/static/style.css?v=5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css?v=8" />
 </head>
 <body>
-  <div class="background-grid" aria-hidden="true"></div>
-  <header class="nav shell">
-    <div class="brand"><span class="brand-mark">▣</span><span>PLATE<span class="accent">VISION</span></span></div>
-    <span class="nav-chip">IMAGE PROCESSING · NO ML</span>
+  <!-- Atmospheric background layers -->
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="bg-grid"></div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <header class="nav">
+    <div class="nav-inner shell">
+      <div class="brand">
+        <div class="brand-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="10" rx="3"></rect>
+            <circle cx="12" cy="12" r="2"></circle>
+            <path d="M6 10h.01M18 10h.01M6 14h.01M18 14h.01"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">PLATE<span class="accent">VISION</span></span>
+          <span class="brand-subtitle">IMAGE PROCESSING PIPELINE</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Theme Switcher -->
+        <div class="theme-toggle" role="group" aria-label="Color Theme">
+          <button type="button" class="theme-btn active" data-set-theme="canva-beige" title="Canva Beige & Blue (Default)">
+            <span class="color-dot beige"></span> Beige
+          </button>
+          <button type="button" class="theme-btn" data-set-theme="canva-navy" title="Canva Deep Navy">
+            <span class="color-dot navy"></span> Navy
+          </button>
+          <button type="button" class="theme-btn" data-set-theme="cyber-dark" title="Dark Tech">
+            <span class="color-dot dark"></span> Cyber
+          </button>
+        </div>
+
+        <span class="nav-chip">CLASSICAL OPENCV</span>
+      </div>
+    </div>
   </header>
 
   <main class="shell">
+    <!-- HERO SECTION -->
     <section class="hero">
-      <p class="eyebrow"><span class="eyebrow-line"></span> NUMBER PLATE RECOGNITION</p>
-      <h1>Detect. <em>Read.</em> Recognize.</h1>
-      <p>Upload a car photograph to locate its registration plate and identify the characters using classical image processing.</p>
+      <div class="hero-content">
+        <div class="eyebrow">
+          <span class="eyebrow-line"></span>
+          <span>ANPR COMPUTER VISION STUDIO</span>
+        </div>
+        <h1>Automated <em>Number Plate</em> Recognition</h1>
+        <p class="hero-desc">
+          Detect vehicle registration plates and extract character sequences using <strong>deterministic classical OpenCV operations</strong> — bilateral denoising, Canny edge detection, Otsu thresholding, and morphological analysis.
+        </p>
+
+        <div class="pipeline-summary-bar">
+          <div class="summary-pill"><span class="pill-dot"></span> 9-Stage Visual Pipeline</div>
+          <div class="summary-pill"><span class="pill-dot"></span> Bounding Box Proposal</div>
+          <div class="summary-pill"><span class="pill-dot"></span> Character Segmentation &amp; OCR</div>
+        </div>
+      </div>
     </section>
 
+    <!-- WORKSPACE: UPLOAD & DETECTION RESULTS -->
     <section class="workspace" aria-labelledby="studio-title">
       <div class="section-header">
-        <div><span class="kicker">IMAGE ANALYSIS</span><h2 id="studio-title">Analyze your vehicle</h2></div>
-        <span class="note">JPG · JPEG · PNG</span>
+        <div>
+          <span class="kicker">INTERACTIVE STUDIO</span>
+          <h2 id="studio-title">Upload &amp; Analyze Vehicle</h2>
+        </div>
+        <span class="supported-formats">JPG · JPEG · PNG (UP TO 24 MB)</span>
       </div>
+
       <div class="studio-grid">
-        <div class="panel upload-panel">
-          <div class="panel-title"><span class="panel-dot"></span> UPLOAD IMAGE</div>
-          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Select an image">
-            <span class="drop-icon">⇧</span>
-            <strong>Drag and drop a car image</strong>
-            <span>or choose a file from your computer</span>
-            <input type="file" id="image-upload" accept=".jpg,.jpeg,.png,image/jpeg,image/png" hidden />
-            <span class="file-help">JPG / JPEG / PNG · UP TO 24 MB</span>
+        <!-- Upload Card -->
+        <div class="card upload-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="status-indicator cyan"></span>
+              <span class="card-title">SOURCE IMAGE</span>
+            </div>
+            <span class="card-badge">INPUT</span>
           </div>
-          <label class="btn btn-primary choose-image-btn" for="image-upload">＋ Choose image</label>
-          <p id="upload-feedback" class="upload-feedback" role="status" aria-live="polite">Select an image to get started.</p>
+
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Select a vehicle image">
+            <div class="drop-illustration">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <strong>Drag and drop a vehicle photo here</strong>
+            <span class="drop-hint">or browse files from your device</span>
+            <input type="file" id="image-upload" accept=".jpg,.jpeg,.png,image/jpeg,image/png" hidden />
+            <span class="file-spec">Supports all standard vehicle camera angles</span>
+          </div>
+
+          <div class="upload-controls">
+            <label class="btn btn-primary" for="image-upload">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Choose Vehicle Image
+            </label>
+          </div>
+
+          <p id="upload-feedback" class="upload-feedback" role="status" aria-live="polite">
+            Select an image to run the classical image processing pipeline.
+          </p>
+
+          <details class="settings-drawer" id="analysis-options">
+            <summary>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              <span>Recognition Mode</span>
+              <span class="drawer-caret">⌄</span>
+            </summary>
+            <div class="drawer-content">
+              <label for="sample-mode" class="sr-only">Mode</label>
+              <select id="sample-mode" class="form-select">
+                <option value="classical" selected>Automatic Image Processing (OpenCV)</option>
+                <option value="reference">Annotation Comparison (Dataset XML)</option>
+              </select>
+              <p id="mode-notice">Analyzes pixels directly using OpenCV computer vision algorithms.</p>
+            </div>
+          </details>
         </div>
 
-        <div class="panel result-panel">
-          <div class="panel-title"><span class="panel-dot green"></span> DETECTION RESULT <span id="analysis-status" class="status">READY</span></div>
-          <div class="result-placeholder" id="result-placeholder"><div class="scan-icon">▤</div><strong>Your result will appear here</strong><span>Choose an image to begin analysis.</span></div>
+        <!-- Detection Result Card -->
+        <div class="card result-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="status-indicator green"></span>
+              <span class="card-title">DETECTION RESULT</span>
+            </div>
+            <span id="analysis-status" class="status-badge ready">READY</span>
+          </div>
+
+          <div class="result-placeholder" id="result-placeholder">
+            <div class="placeholder-graphic">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+                <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+                <path d="M7 12h10M12 7v10"></path>
+              </svg>
+            </div>
+            <strong>Awaiting Vehicle Image</strong>
+            <p>Upload a photograph on the left to begin automatic plate localization and character recognition.</p>
+          </div>
+
           <div class="result-loaded" id="result-loaded" hidden>
-            <img id="result-image" alt="Car image with highlighted number-plate region" />
-            <div class="result-section-title">PLATE READING</div>
-            <div id="predictions" class="prediction-list" aria-live="polite"></div>
-            <p id="result-source" class="result-source" hidden></p>
+            <div class="preview-box">
+              <img id="result-image" alt="Car image with localized number plate" />
+            </div>
+
+            <div class="result-body">
+              <div class="result-label">RECOGNIZED PLATE</div>
+              <div id="predictions" class="prediction-list" aria-live="polite"></div>
+              <p id="result-source" class="result-source" hidden></p>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="settings-bottom" aria-labelledby="settings-title">
-      <details id="analysis-options">
-        <summary id="settings-title">Image analysis mode <span class="settings-caret">⌄</span></summary>
-        <div class="settings-content">
-          <label for="sample-mode">Recognition mode</label>
-          <select id="sample-mode" class="mode-select">
-            <option value="classical" selected>Automatic image processing</option>
-            <option value="reference">Annotation comparison</option>
-          </select>
-          <p id="mode-notice">Automatic mode analyzes image pixels using OpenCV. Recognition accuracy varies with image quality.</p>
-          <p class="setting-note">Annotation comparison displays a label supplied with a matching reference image. It is not character recognition from the image.</p>
+    <!-- PROCESSING PIPELINE SECTION (MAJOR STEPS LIKE UPLOADED IMAGE) -->
+    <section class="pipeline-section" id="pipeline-section" hidden>
+      <div class="pipeline-header">
+        <div class="pipeline-title-group">
+          <span class="pipeline-kicker">STEP-BY-STEP COMPUTER VISION</span>
+          <h2>PROCESSING PIPELINE <span class="pipeline-hint">(CLICK TO ENLARGE)</span></h2>
         </div>
-      </details>
+        <div class="pipeline-tag">9 PIPELINE STAGES</div>
+      </div>
+
+      <div class="pipeline-grid" id="pipeline-grid">
+        <!-- Rendered dynamically via app.js -->
+      </div>
     </section>
-    <footer><span>PLATEVISION</span><span>Python · OpenCV · Classical image processing</span></footer>
+
+    <!-- ARCHITECTURE / METHODOLOGY ACCORDION -->
+    <section class="methodology-section">
+      <div class="section-header">
+        <div>
+          <span class="kicker">ALGORITHM BREAKDOWN</span>
+          <h2>Major Pipeline Transformations</h2>
+        </div>
+      </div>
+
+      <div class="methodology-grid">
+        <div class="method-card">
+          <div class="method-step">01</div>
+          <div class="method-body">
+            <h3>Grayscale Conversion</h3>
+            <p>Eliminates chrominance variation to focus solely on luminance intensity, reducing computational dimensionality.</p>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-step">02</div>
+          <div class="method-body">
+            <h3>CLAHE Equalization</h3>
+            <p>Contrast Limited Adaptive Histogram Equalization enhances local contrast to expose faint license plate boundaries.</p>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-step">03</div>
+          <div class="method-body">
+            <h3>Bilateral Filtering</h3>
+            <p>Smooths flat background textures while strictly preserving sharp character edges, preventing blurring across glyphs.</p>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-step">04</div>
+          <div class="method-body">
+            <h3>Canny Edge Detection</h3>
+            <p>Calculates multi-directional intensity gradients to isolate structural candidate contours of the rectangular plate frame.</p>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-step">05</div>
+          <div class="method-body">
+            <h3>Otsu Thresholding</h3>
+            <p>Calculates the optimal global binarization threshold via inter-class variance maximization for clean black/white masks.</p>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-step">06</div>
+          <div class="method-body">
+            <h3>Morphological Closing</h3>
+            <p>Applies rectangular structuring element closing to bridge fragmented character outlines and consolidate license plate blobs.</p>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-step">07</div>
+          <div class="method-body">
+            <h3>Geometric Scoring</h3>
+            <p>Evaluates candidate bounding boxes using aspect ratio, vertical gradient texture, and contour density heuristics.</p>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-step">08</div>
+          <div class="method-body">
+            <h3>Topological Character OCR</h3>
+            <p>Segments individual glyphs and matches against normalized synthetic font templates with topological hole-count verification.</p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
-  <script src="/static/app.js?v=5"></script>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="shell footer-inner">
+      <div class="footer-left">
+        <strong>PLATEVISION ANPR</strong>
+        <span>Classical OpenCV Computer Vision · Pure Python Implementation</span>
+      </div>
+      <div class="footer-right">
+        <span>Pure Image Processing · Computer Vision</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- LIGHTBOX MODAL FOR ENLARGING PIPELINE STEPS -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged pipeline image" hidden>
+    <button class="lightbox-close" id="lightbox-close" aria-label="Close lightbox">✕</button>
+    <div class="lightbox-content">
+      <img id="lightbox-img" src="" alt="Enlarged pipeline step" />
+      <div class="lightbox-caption" id="lightbox-label"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=8"></script>
 </body>
 </html>

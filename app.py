@@ -45,6 +45,68 @@ def _image_data(image,max_width=1150):
     return 'data:image/jpeg;base64,'+base64.b64encode(buf).decode() if ok else ''
 
 
+def _pipeline_steps(image, predictions):
+    """Generate base64 images for each of the 9 major pipeline steps from the reference pipeline."""
+    steps = {}
+    h, w = image.shape[:2]
+    # 1. Original
+    steps['original'] = _image_data(image)
+
+    # 2. Grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    steps['grayscale'] = _image_data(cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR))
+
+    # 3. CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    clahe_img = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8)).apply(gray)
+    steps['clahe'] = _image_data(cv2.cvtColor(clahe_img, cv2.COLOR_GRAY2BGR))
+
+    # 4. Denoised (Bilateral Filter)
+    denoised = cv2.bilateralFilter(clahe_img, 5, 45, 45)
+    steps['denoised'] = _image_data(cv2.cvtColor(denoised, cv2.COLOR_GRAY2BGR))
+
+    # 5. Edges (Canny)
+    edges = cv2.Canny(denoised, 80, 185)
+    steps['edges'] = _image_data(cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))
+
+    # 6. Threshold (Otsu)
+    _, thresh = cv2.threshold(clahe_img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    steps['threshold'] = _image_data(cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR))
+
+    # 7. Morphology (Closed) - Sobel gradient + Morphological Closing
+    rect = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 5))
+    blackhat = cv2.morphologyEx(denoised, cv2.MORPH_BLACKHAT, rect)
+    grad = cv2.Sobel(blackhat, cv2.CV_8U, 1, 0, ksize=3)
+    grad = cv2.GaussianBlur(grad, (3, 3), 0)
+    _, grad_thresh = cv2.threshold(grad, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    morph = cv2.morphologyEx(grad_thresh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (21, 3)))
+    steps['morphology'] = _image_data(cv2.cvtColor(morph, cv2.COLOR_GRAY2BGR))
+
+    # 8. Detection Result (Red=A, Green=B)
+    det_img = image.copy()
+    # Draw candidate boxes in red (A)
+    try:
+        from anpr import _candidate_boxes
+        candidates = _candidate_boxes(image)
+        for _, (cx, cy, cw, ch) in candidates[:4]:
+            cv2.rectangle(det_img, (cx, cy), (cx+cw, cy+ch), (40, 40, 220), 2)
+    except Exception:
+        pass
+    # Draw chosen detections in green (B)
+    for res in predictions:
+        bx, by, bw, bh = res.box
+        cv2.rectangle(det_img, (bx, by), (bx+bw, by+bh), (46, 204, 113), 3)
+    steps['detection'] = _image_data(det_img)
+
+    # 9. Plate Crop
+    if predictions and predictions[0].crop is not None and predictions[0].crop.size > 0:
+        steps['plate_crop'] = _image_data(predictions[0].crop, 800)
+    else:
+        # Fallback to center crop if no plate found
+        steps['plate_crop'] = _image_data(image[h//3:2*h//3, w//4:3*w//4], 800)
+
+    return steps
+
+
 def _analysis(image,reference_path=None,mode='classical'):
     if image is None:raise HTTPException(400,'Unreadable image. Use JPG, JPEG or PNG.')
     if mode=='reference':
@@ -70,6 +132,7 @@ def _analysis(image,reference_path=None,mode='classical'):
                        for res in predictions],
         'reference_entries':[],
         'annotated_image':_image_data(annotate(image,predictions)),
+        'pipeline_steps':_pipeline_steps(image, predictions),
         'reference_for_evaluation_only':None,
         'annotation_notice':'Image-only inference completed BEFORE XML labels were read. XML appears only as a separate evaluation reference.'
     }
@@ -103,7 +166,7 @@ def _catalog_analysis(image, item):
 def home():return (BASE/'templates'/'index.html').read_text(encoding='utf-8')
 
 @app.get('/api/health')
-def health():return {'ok':True,'dataset_images':len(_manifest),'catalog_images':_catalog.get('metadata',{}).get('total_source_images',0),'engine':'Classical OpenCV plus separate SHA256-to-XML dataset lookup — NO ML'}
+def health():return {'ok':True,'dataset_images':len(_manifest),'catalog_images':_catalog.get('metadata',{}).get('total_source_images',0),'engine':'Classical OpenCV plus separate SHA256-to-XML dataset lookup'}
 
 @app.get('/api/catalog/summary')
 def catalog_summary():

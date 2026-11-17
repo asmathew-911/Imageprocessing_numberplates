@@ -1,154 +1,352 @@
-const $ = id => document.getElementById(id);
-let selectedFile = null;
-let requestNumber = 0;
-let previewUrl = null;
+/* ============================================================
+   PlateVision — Client-Side Application
+   Handles theme switching, file upload, pipeline rendering & lightbox
+   ============================================================ */
 
-function setStatus(value) { $('analysis-status').textContent = value; }
-function feedback(value, isError=false) {
+const $ = id => document.getElementById(id);
+
+let selectedFile  = null;
+let requestNumber = 0;
+let previewUrl    = null;
+
+// ---- Theme Management --------------------------------------
+function initThemes() {
+  const saved = localStorage.getItem('platevision-theme') || 'canva-beige';
+  setTheme(saved);
+
+  document.querySelectorAll('[data-set-theme]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.getAttribute('data-set-theme');
+      setTheme(theme);
+    });
+  });
+}
+
+function setTheme(themeName) {
+  document.documentElement.setAttribute('data-theme', themeName);
+  localStorage.setItem('platevision-theme', themeName);
+
+  document.querySelectorAll('[data-set-theme]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-set-theme') === themeName);
+  });
+}
+
+// ---- Status helpers ----------------------------------------
+function setStatus(text, statusClass = 'ready') {
+  const badge = $('analysis-status');
+  badge.textContent = text;
+  badge.className = `status-badge ${statusClass}`;
+}
+
+function feedback(message, isError = false) {
   const el = $('upload-feedback');
-  el.textContent = value;
+  el.textContent = message;
   el.classList.toggle('error', isError);
 }
-function safeText(value, fallback='—') { return typeof value === 'string' && value.trim() ? value : fallback; }
 
-function addResult(result, isReference) {
-  const list = $('predictions');
-  const card = document.createElement('div');
-  card.className = 'prediction';
-  if (result.crop_image) {
-    const crop = document.createElement('img');
-    crop.src = result.crop_image;
-    crop.alt = 'Number plate crop';
-    card.append(crop);
-  }
-  const body = document.createElement('div');
-  body.className = 'prediction-body';
-  const text = document.createElement('div');
-  text.className = 'result-text';
-  text.textContent = safeText(result.text, 'NOT READABLE');
-  body.append(text);
-  if (isReference) {
-    const source = document.createElement('div');
-    source.className = 'result-desc';
-    source.textContent = 'Reference annotation · not automatically read from pixels';
-    body.append(source);
-    if (result.review_needed) {
-      const warning = document.createElement('div');
-      warning.className = 'review-warning';
-      warning.textContent = 'This reference label may need manual review.';
-      body.append(warning);
-    }
-  } else {
-    const status = document.createElement('div');
-    status.className = 'result-desc';
-    status.textContent = result.status === 'read' ? 'Automatic image-processing result · please verify' : 'Uncertain reading · please verify';
-    body.append(status);
-    if (Array.isArray(result.character_diagnostics) && result.character_diagnostics.length) {
-      const more = document.createElement('details');
-      more.className = 'character-details';
-      const summary = document.createElement('summary');
-      summary.textContent = 'Character details';
-      more.append(summary);
-      for (const c of result.character_diagnostics) {
-        const line = document.createElement('div');
-        line.className = 'character-line';
-        const alternatives = (c.alternatives || []).slice(0, 3).map(a => `${a.char} (${Number(a.similarity).toFixed(2)})`).join(' · ');
-        line.textContent = `${c.position}. ${c.predicted || '?'}  —  ${alternatives}`;
-        more.append(line);
-      }
-      body.append(more);
-    }
-  }
-  card.append(body);
-  list.append(card);
+function safeText(value, fallback = '—') {
+  return typeof value === 'string' && value.trim() ? value : fallback;
 }
 
-function showResult(data) {
+// ---- Pipeline Step Definitions (Matching Uploaded Screenshot)
+const PIPELINE_ORDER = [
+  { key: 'original',   label: 'Original' },
+  { key: 'grayscale',  label: 'Grayscale' },
+  { key: 'clahe',      label: 'CLAHE' },
+  { key: 'denoised',   label: 'Denoised (Bilateral Filter)' },
+  { key: 'edges',      label: 'Edges (Canny)' },
+  { key: 'threshold',  label: 'Threshold (Otsu)' },
+  { key: 'morphology', label: 'Morphology (Closed)' },
+  { key: 'detection',  label: 'Detection Result (Red=A, Green=B)' },
+  { key: 'plate_crop', label: 'Plate Crop' },
+];
+
+function renderPipeline(data) {
+  const steps = data.pipeline_steps || {};
+  const grid  = $('pipeline-grid');
+  grid.replaceChildren();
+
+  let count = 0;
+
+  // Determine recognized plate text for step 9
+  let recognizedText = '';
+  if (data.predictions && data.predictions.length > 0) {
+    recognizedText = data.predictions[0].text || '';
+  }
+
+  PIPELINE_ORDER.forEach(item => {
+    const imgSrc = steps[item.key];
+    if (!imgSrc) return;
+    count++;
+
+    let displayLabel = item.label;
+    if (item.key === 'plate_crop') {
+      displayLabel = recognizedText ? `Plate Crop - "${recognizedText}"` : 'Plate Crop';
+    }
+
+    // Pipeline card container
+    const card = document.createElement('div');
+    card.className = 'pipeline-card';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `View ${displayLabel}`);
+
+    // Image wrapper
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'pipeline-card-img-wrap';
+
+    const img = document.createElement('img');
+    img.src = imgSrc;
+    img.alt = displayLabel;
+    img.loading = 'lazy';
+    imgWrap.append(img);
+
+    // Caption banner underneath image
+    const banner = document.createElement('div');
+    banner.className = 'pipeline-card-label';
+    banner.textContent = displayLabel;
+
+    card.append(imgWrap, banner);
+
+    // Lightbox triggers
+    card.addEventListener('click', () => openLightbox(imgSrc, displayLabel));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openLightbox(imgSrc, displayLabel);
+      }
+    });
+
+    grid.append(card);
+  });
+
+  const section = $('pipeline-section');
+  if (count > 0) {
+    section.hidden = false;
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    section.hidden = true;
+  }
+}
+
+// ---- Lightbox Functionality --------------------------------
+function openLightbox(src, title) {
+  $('lightbox-img').src = src;
+  $('lightbox-label').textContent = title;
+  $('lightbox').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  $('lightbox').hidden = true;
+  document.body.style.overflow = '';
+}
+
+$('lightbox-close').addEventListener('click', closeLightbox);
+$('lightbox').addEventListener('click', e => {
+  if (e.target === $('lightbox')) closeLightbox();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('lightbox').hidden) closeLightbox();
+});
+
+// ---- Result Rendering --------------------------------------
+function addPredictionCard(result, isReference) {
+  const container = $('predictions');
+  const card = document.createElement('div');
+  card.className = 'prediction';
+
+  if (result.crop_image) {
+    const cropImg = document.createElement('img');
+    cropImg.src = result.crop_image;
+    cropImg.alt = 'Plate crop preview';
+    card.append(cropImg);
+  }
+
+  const body = document.createElement('div');
+  body.className = 'prediction-body';
+
+  const textEl = document.createElement('div');
+  textEl.className = 'result-text';
+  textEl.textContent = safeText(result.text, 'UNREADABLE');
+  body.append(textEl);
+
+  if (isReference) {
+    const desc = document.createElement('div');
+    desc.className = 'result-desc';
+    desc.textContent = 'Ground truth annotation from dataset XML';
+    body.append(desc);
+  } else {
+    const desc = document.createElement('div');
+    desc.className = 'result-desc';
+    const isConfident = result.status === 'read';
+    desc.textContent = isConfident
+      ? `Detected plate (${Math.round((result.confidence || 0) * 100)}% template match)`
+      : 'Uncertain reading — please verify with visual crop';
+    body.append(desc);
+
+    // Diagnostics details
+    if (Array.isArray(result.character_diagnostics) && result.character_diagnostics.length) {
+      const details = document.createElement('details');
+      details.className = 'character-details';
+
+      const summary = document.createElement('summary');
+      summary.textContent = 'View character template matches';
+      details.append(summary);
+
+      result.character_diagnostics.forEach(char => {
+        const line = document.createElement('div');
+        line.className = 'character-line';
+        const alts = (char.alternatives || [])
+          .slice(0, 3)
+          .map(a => `${a.char} (${Number(a.similarity).toFixed(2)})`)
+          .join(' · ');
+        line.textContent = `${char.position}. [${char.predicted || '?'}]  ${alts}`;
+        details.append(line);
+      });
+      body.append(details);
+    }
+  }
+
+  card.append(body);
+  container.append(card);
+}
+
+function displayResults(data) {
   $('result-placeholder').hidden = true;
   $('result-loaded').hidden = false;
   $('result-image').src = data.annotated_image;
-  const list = $('predictions');
-  list.replaceChildren();
-  const source = $('result-source');
-  source.hidden = true;
-  source.textContent = '';
+
+  const predList = $('predictions');
+  const sourceEl = $('result-source');
+  predList.replaceChildren();
+  sourceEl.hidden = true;
+  sourceEl.textContent = '';
+
   if (data.mode === 'reference') {
     const entries = data.reference_entries || [];
     if (!entries.length) {
-      list.textContent = 'No matching reference annotation available.';
-      setStatus('NO REFERENCE');
+      predList.textContent = 'No matching reference annotation available.';
+      setStatus('NO XML', 'error');
     } else {
-      entries.forEach(r => addResult(r, true));
-      setStatus('REFERENCE');
+      entries.forEach(r => addPredictionCard(r, true));
+      setStatus('XML MATCH', 'analyzed');
     }
-    source.textContent = 'This comparison uses an existing annotation, not automatic character recognition.';
-    source.hidden = false;
+    sourceEl.textContent = 'Ground-truth dataset reference shown for comparison.';
+    sourceEl.hidden = false;
+    $('pipeline-section').hidden = true;
     return;
   }
+
   const predictions = data.predictions || [];
   if (!predictions.length) {
-    list.textContent = 'No reliable number plate found in this image.';
-    setStatus('NOT FOUND');
+    predList.textContent = 'No candidate registration plate identified in this image.';
+    setStatus('NOT FOUND', 'error');
   } else {
-    predictions.forEach(r => addResult(r, false));
-    setStatus(predictions.some(r => r.status === 'read') ? 'ANALYZED' : 'UNCERTAIN');
+    predictions.forEach(p => addPredictionCard(p, false));
+    const anyRead = predictions.some(p => p.status === 'read');
+    setStatus(anyRead ? 'ANALYZED' : 'UNCERTAIN', anyRead ? 'analyzed' : 'processing');
   }
+
+  // Render the 9 major processing pipeline steps!
+  renderPipeline(data);
 }
 
-async function analyze(file) {
+// ---- Analysis API Call -------------------------------------
+async function analyzeImage(file) {
   if (!file) return;
-  if (!/\.(jpe?g|png)$/i.test(file.name)) { feedback('Please choose a JPG, JPEG, or PNG file.',true); return; }
-  if (file.size > 24 * 1024 * 1024) { feedback('Please select an image under 24 MB.',true); return; }
+
+  if (!/\.(jpe?g|png)$/i.test(file.name)) {
+    feedback('Please upload a valid JPG, JPEG, or PNG image.', true);
+    return;
+  }
+  if (file.size > 24 * 1024 * 1024) {
+    feedback('Image file size must be under 24 MB.', true);
+    return;
+  }
+
   selectedFile = file;
-  const seq = ++requestNumber;
+  const currentReq = ++requestNumber;
+
+  // Local object URL for instant preview
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = URL.createObjectURL(file);
+
   $('result-image').src = previewUrl;
   $('result-placeholder').hidden = true;
   $('result-loaded').hidden = false;
-  $('predictions').textContent = 'Analyzing the image…';
+  $('predictions').textContent = 'Executing OpenCV processing pipeline…';
   $('result-source').hidden = true;
-  setStatus('PROCESSING');
-  feedback(`Processing ${file.name}…`);
-  const form = new FormData();
-  form.append('file', file);
+  $('pipeline-section').hidden = true;
+
+  setStatus('PROCESSING', 'processing');
+  feedback(`Analyzing ${file.name} through 9 pipeline stages…`);
+
+  const formData = new FormData();
+  formData.append('file', file);
+
   try {
     const mode = $('sample-mode').value;
-    const response = await fetch('/api/upload?mode=' + encodeURIComponent(mode), {method:'POST', body:form});
-    const data = await response.json().catch(() => ({}));
-    if (seq !== requestNumber) return;
-    if (!response.ok) throw new Error(data.detail || `Upload error (${response.status})`);
-    showResult(data);
-    feedback(`Completed: ${file.name}`);
+    const res = await fetch(`/api/upload?mode=${encodeURIComponent(mode)}`, {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await res.json().catch(() => ({}));
+
+    if (currentReq !== requestNumber) return;
+
+    if (!res.ok) {
+      throw new Error(result.detail || `Server error (${res.status})`);
+    }
+
+    displayResults(result);
+    feedback(`Analysis complete for ${file.name}`);
   } catch (err) {
-    if (seq !== requestNumber) return;
-    setStatus('ERROR');
-    const error = err instanceof TypeError ? 'Cannot contact the local Python server. Check that python app.py is running.' : String(err.message || err);
-    feedback(error, true);
-    $('predictions').textContent = 'Unable to analyze this image. ' + error;
+    if (currentReq !== requestNumber) return;
+    setStatus('FAILED', 'error');
+    const msg = err instanceof TypeError
+      ? 'Cannot reach local server. Ensure "python app.py" is running.'
+      : String(err.message || err);
+    feedback(msg, true);
+    $('predictions').textContent = `Analysis error: ${msg}`;
   }
 }
 
+// ---- Event Listeners ---------------------------------------
 const dropzone = $('dropzone');
+
 dropzone.addEventListener('click', () => $('image-upload').click());
-dropzone.addEventListener('keydown', event => {
-  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); $('image-upload').click(); }
+dropzone.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    $('image-upload').click();
+  }
 });
-dropzone.addEventListener('dragover', event => { event.preventDefault(); dropzone.classList.add('dragover'); });
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.classList.add('dragover');
+});
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-dropzone.addEventListener('drop', event => {
-  event.preventDefault(); dropzone.classList.remove('dragover');
-  analyze(event.dataTransfer?.files?.[0]);
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  analyzeImage(e.dataTransfer?.files?.[0]);
 });
-$('image-upload').addEventListener('change', event => {
-  const file = event.target.files?.[0];
-  event.target.value = '';
-  analyze(file);
+
+$('image-upload').addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  e.target.value = '';
+  analyzeImage(file);
 });
+
 $('sample-mode').addEventListener('change', () => {
-  const isReference = $('sample-mode').value === 'reference';
-  $('mode-notice').textContent = isReference
-    ? 'Shows an existing annotation for an exactly matching reference image, not a plate number read from pixels.'
-    : 'Analyzes image pixels directly using OpenCV. Accuracy varies with image quality.';
-  if (selectedFile) analyze(selectedFile);
+  const isRef = $('sample-mode').value === 'reference';
+  $('mode-notice').textContent = isRef
+    ? 'Displays ground-truth annotations from dataset XML if this image matches a dataset sample.'
+    : 'Analyzes pixels directly using OpenCV computer vision algorithms.';
+  if (selectedFile) analyzeImage(selectedFile);
 });
+
+// Initialize on page load
+initThemes();
