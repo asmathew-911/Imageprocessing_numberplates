@@ -1,18 +1,4 @@
-"""
-PlateVision Benchmark & Noise Robustness Plot Generator
 
-Supports two modes:
-1. Real Project Dataset Mode (Default):
-   Calculates actual metrics (Detection rate, IoU accuracy, Precision, Recall,
-   and empirical Gaussian noise degradation) directly from your project's images.
-2. Reference Image Mode (--reference):
-   Replicates the exact static values and labels from the template slide.
-
-Usage:
-    python generate_benchmark_plots.py             # Uses real metrics from your project dataset
-    python generate_benchmark_plots.py --reference # Uses the static reference template numbers
-    python generate_benchmark_plots.py --live      # Injects live Gaussian noise over dataset
-"""
 from __future__ import annotations
 import argparse
 from pathlib import Path
