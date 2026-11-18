@@ -16,7 +16,12 @@ PlateVision is a computer vision web application for vehicle number plate locali
    python app.py
    ```
 
-3. **Open in your browser:**
+3. **Generate benchmark & noise robustness plots:**
+   ```powershell
+   python generate_benchmark_plots.py
+   ```
+
+4. **Open in your browser:**
    ```
    http://127.0.0.1:8000
    ```
@@ -31,6 +36,7 @@ Imageprocessing_numberplates/
 ├── anpr.py                         # 🧠 Core computer vision & character OCR algorithms
 ├── app.py                          # 🌐 FastAPI web server & 9-stage visual pipeline generator
 ├── batch.py                        # 📊 Batch evaluation runner across dataset directories
+├── generate_benchmark_plots.py     # 📈 Benchmark & noise robustness plot generator (300 DPI)
 ├── dataset_catalog.py              # 🔍 SHA256 image lookup helper for ground-truth references
 ├── dataset_reference_catalog.json  # 📑 Pre-compiled reference annotations catalog
 ├── prepare_dataset.py              # 📦 Dataset ZIP extractor and image file scanner
